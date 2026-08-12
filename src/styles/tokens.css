@@ -1,0 +1,81 @@
+/*
+ * Sistema de StateRender: una suite de monitoreo.
+ *
+ * Dos superficies con oficios distintos. El monitor es oscuro porque un fotograma
+ * se juzga contra un fondo neutro; el escritorio es claro porque ahí se lee y se
+ * opera. Todo lo que ocurre en el visor pertenece al monitor; todo lo que se
+ * pulsa y se lee con calma pertenece al escritorio.
+ */
+:root {
+  /* Monitor */
+  --stage: #16191b;
+  --riser: #1e2225;
+  --stage-line: #2c3235;
+  --glow: #e8eae9;
+  --glow-60: #9aa1a4;
+
+  /* Escritorio */
+  --desk: #ecedeb;
+  --recess: #dfe1de;
+  --plate: #f8f9f7;
+  --rule: #c9ccc8;
+  --ink: #0f1214;
+  --ink-70: #3c4245;
+  --ink-45: #5c6265;
+
+  /* Canales: cada estructura es un canal, y su color la identifica en todas partes. */
+  --ch-c: #0ea5c0;
+  --ch-m: #c6499a;
+  --ch-v: #8b7cf5;
+
+  /* Amarillo de emisión. Significa una sola cosa en toda la plataforma:
+     «esto es lo que el fotograma actual está tocando». */
+  --play: #e8c400;
+
+  --null: #6b7176;
+  --ok: #3e9e6c;
+  --bad: #d8453a;
+
+  /* Canal activo; App lo reasigna al cambiar de estructura. */
+  --ch: var(--ch-c);
+
+  /* El anillo de foco se invierte sobre el monitor: las superficies oscuras
+     redefinen --focus en lugar de repetir la regla. */
+  --focus: var(--ink);
+
+  --font-osd: 'Martian Mono Variable', ui-monospace, monospace;
+  --font-ui: 'Instrument Sans Variable', system-ui, sans-serif;
+  --font-code: 'Spline Sans Mono Variable', ui-monospace, 'SFMono-Regular', monospace;
+
+  --r-panel: 5px;
+  --r-chip: 3px;
+
+  --shadow-panel: 0 1px 0 rgba(15, 18, 20, 0.05);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+  --dur-link: 520ms;
+}
+
+/*
+ * Rótulo de monitor: mono ancho, versalitas, muy espaciado. Es el recurso
+ * tipográfico que se repite en toda la plataforma y el que le da la voz de
+ * instrumento: una lectura de aparato, no una etiqueta de folleto.
+ */
+.osd {
+  font-family: var(--font-osd);
+  font-weight: 600;
+  font-stretch: 112%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.mono {
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-link: 1ms;
+  }
+}
