@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": "22.22.0"
-  },
   "description": "StateRender: estructuras de datos fotograma a fotograma. Cada paso de un algoritmo es un estado renderizado que se puede reproducir, pausar y recorrer.",
   "scripts": {
     "dev": "vite",
