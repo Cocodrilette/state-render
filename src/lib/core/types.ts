@@ -89,15 +89,22 @@ export interface ArgDef {
 
 export type OpArgs = Record<string, number>;
 
-export interface OperationDef {
-  id: string;
-  label: string;
-  /** Agrupa los botones en la consola. */
-  group: 'insertar' | 'eliminar' | 'consultar';
+/**
+ * Lo que el panel de pseudocódigo necesita para dibujarse. Una operación de lista lo
+ * cumple por su propia forma, y un escenario puede aportarlo sin ser una operación.
+ */
+export interface Program {
   complexity: string;
   /** Por qué cuesta lo que cuesta. */
   note: string;
   code: string[];
+}
+
+export interface OperationDef extends Program {
+  id: string;
+  label: string;
+  /** Agrupa los botones en la consola. */
+  group: 'insertar' | 'eliminar' | 'consultar';
   args: ArgDef[];
   run(state: ListState, args: OpArgs): Generator<Frame, ListState>;
 }
@@ -115,4 +122,22 @@ export interface StructureDef {
   doubly?: boolean;
   seed: number[];
   operations: OperationDef[];
+}
+
+/**
+ * Un escenario no es una estructura: es un problema que necesita varias trabajando
+ * juntas. Comparte el chasis del reproductor y el panel de pseudocódigo, pero trae
+ * su propio visor y su propia consola.
+ */
+export interface ScenarioDef {
+  id: string;
+  /** Distintivo de canal: «SIM1». */
+  channel: string;
+  label: string;
+  tagline: string;
+  /** Variable CSS con el color del canal. */
+  color: string;
+  /** Las estructuras que intervienen, para el navegador. */
+  parts: string[];
+  program: Program;
 }

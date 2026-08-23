@@ -1,14 +1,15 @@
 <script lang="ts">
   import { prefersReducedMotion } from '../motion';
-  import type { OperationDef } from '../core/types';
+  import type { Program } from '../core/types';
 
   interface Props {
-    operation: OperationDef | null;
+    /** Una operación de lista o el programa de un escenario: al panel le da igual. */
+    program: Program | null;
     activeLine: number;
     running: boolean;
   }
 
-  let { operation, activeLine, running }: Props = $props();
+  let { program, activeLine, running }: Props = $props();
 
   let list: HTMLOListElement | undefined = $state();
 
@@ -23,14 +24,14 @@
 <section class="code" aria-label="Pseudocódigo">
   <header>
     <h2 class="osd title">Pseudocódigo</h2>
-    {#if operation}
-      <span class="cost mono">{operation.complexity}</span>
+    {#if program}
+      <span class="cost mono">{program.complexity}</span>
     {/if}
   </header>
 
-  {#if operation}
+  {#if program}
     <ol bind:this={list}>
-      {#each operation.code as line, i (i)}
+      {#each program.code as line, i (i)}
         <li class="line" class:current={running && i === activeLine}>
           <span class="num mono">{String(i).padStart(2, '0')}</span>
           <code class="mono">{line}</code>
@@ -38,7 +39,7 @@
       {/each}
     </ol>
 
-    <p class="note">{operation.note}</p>
+    <p class="note">{program.note}</p>
   {:else}
     <p class="note bare">Elige una operación en la consola para ver su pseudocódigo.</p>
   {/if}

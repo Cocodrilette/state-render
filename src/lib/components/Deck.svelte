@@ -1,9 +1,10 @@
 <script lang="ts">
   import FrameStrip from './FrameStrip.svelte';
-  import { SPEEDS, type Player } from '../player.svelte';
+  import { SPEEDS, type Playback } from '../playback.svelte';
 
   interface Props {
-    player: Player;
+    /** Cualquier reproductor: el transporte no sabe qué retrata el fotograma. */
+    player: Playback;
   }
 
   let { player }: Props = $props();
@@ -12,9 +13,9 @@
 </script>
 
 <section class="deck" aria-label="Reproducción">
-  <p class="caption" class:success={player.frame.tone === 'success'} class:warning={player.frame.tone === 'warning'}>
+  <p class="caption" class:success={player.tone === 'success'} class:warning={player.tone === 'warning'}>
     <span class="pip" aria-hidden="true"></span>
-    <span aria-live="polite">{player.frame.caption}</span>
+    <span aria-live="polite">{player.caption}</span>
   </p>
 
   <div class="transport">
@@ -48,7 +49,7 @@
     <FrameStrip {player} />
 
     <p class="counter mono">
-      {String(step).padStart(2, '0')}<span class="slash">/</span>{String(player.frames.length).padStart(2, '0')}
+      {String(step).padStart(2, '0')}<span class="slash">/</span>{String(player.frameCount).padStart(2, '0')}
     </p>
 
     <div class="speeds" role="group" aria-label="Velocidad">

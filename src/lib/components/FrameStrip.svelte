@@ -1,38 +1,41 @@
 <script lang="ts">
-  import type { Player } from '../player.svelte';
+  import type { Playback } from '../playback.svelte';
 
   interface Props {
-    player: Player;
+    player: Playback;
   }
 
   let { player }: Props = $props();
 
   let strip: HTMLDivElement | undefined = $state();
   let head = $state(0);
+  let railWidth = $state(0);
 
   /**
-   * Cada fotograma se reduce a una columna de marcas, una por nodo, con la que el
-   * paso está tocando en amarillo. Leída de corrido, la tira dibuja la forma de la
-   * operación: un recorrido baja en diagonal, una inserción abre una marca nueva,
-   * un fallo enciende el filo rojo. Se ve la operación entera antes de reproducirla.
-   *
-   * Las celdas miden lo mismo siempre y la tira crece hacia la derecha, así que su
-   * largo dice cuántos pasos cuesta la operación: eso también es información.
+   * La reducción de fotograma a marcas la aporta cada reproductor: para una lista es
+   * una marca por nodo, para el escenario del metro una por cabeza de tren. Leída de
+   * corrido, la tira dibuja la forma de lo que se está reproduciendo — un recorrido
+   * baja en diagonal, una flota se va vaciando hacia el taller — y su largo dice
+   * cuántos pasos cuesta. Eso también es información.
    */
-  let cells = $derived(
-    player.frames.map((frame) => {
-      const active = new Set(frame.activeNodes);
-      const ghosts = new Set(frame.ghosts);
-      return {
-        tone: frame.tone,
-        marks: frame.nodes.map((node) => (active.has(node.id) ? 'on' : ghosts.has(node.id) ? 'gone' : 'off')),
-      };
-    }),
-  );
+  let cells = $derived(player.stripCells);
+
+  // El riel se mide para poder volver a situar el cabezal cuando cambia de ancho: si
+  // no, al redimensionar la ventana se queda en la coordenada vieja y, al quedar
+  // fuera del riel, arrastra el scroll horizontal de la página entera.
+  $effect(() => {
+    if (!strip) return;
+    const observer = new ResizeObserver(() => {
+      railWidth = strip!.clientWidth;
+    });
+    observer.observe(strip);
+    return () => observer.disconnect();
+  });
 
   // El cabezal se mide sobre las celdas ya dispuestas, no se estima: así cae
   // centrado en el fotograma actual aunque la tira se comprima.
   $effect(() => {
+    railWidth; // volver a medir cuando el riel cambia de ancho
     const cell = strip?.children[player.index] as HTMLElement | undefined;
     if (!cell || !cells.length) return;
     head = cell.offsetLeft + cell.offsetWidth / 2;
@@ -44,7 +47,7 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
-    const last = player.frames.length - 1;
+    const last = player.frameCount - 1;
     let next: number | null = null;
 
     if (event.key === 'ArrowRight') next = Math.min(player.index + 1, last);

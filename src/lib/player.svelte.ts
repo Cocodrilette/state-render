@@ -1,30 +1,51 @@
 import { cloneState, createState, idleFrame, runOperation } from './core/list-state';
 import { structures } from './core/registry';
-import type { Frame, ListState, OpArgs, OperationDef, StructureDef } from './core/types';
+import type { Frame, ListState, OpArgs, OperationDef, StructureDef, Tone } from './core/types';
+import { Playback, type StripCell } from './playback.svelte';
 
-export const SPEEDS = [0.5, 1, 2, 4];
-const BASE_INTERVAL = 900;
+export { SPEEDS } from './playback.svelte';
 
 /**
- * Reproductor de fotogramas. La operación ya se ejecutó entera antes de que empiece
- * la animación, así que avanzar, retroceder y arrastrar la línea de tiempo son lo
- * mismo: cambiar un índice.
+ * Reproductor de un canal de estructura. El transporte lo aporta `Playback`; aquí
+ * queda solo lo que sabe de listas: qué estructura está montada, qué operación se
+ * va a ejecutar y con qué argumentos.
  */
-export class Player {
+export class Player extends Playback {
   structure = $state<StructureDef>(structures[0]);
   list = $state<ListState>(createState(structures[0].seed, structures[0].circular, structures[0].doubly));
   operation = $state<OperationDef | null>(null);
   args = $state<OpArgs>({});
   frames = $state<Frame[]>([]);
-  index = $state(0);
-  playing = $state(false);
-  speed = $state(1);
 
   frame = $derived<Frame>(this.frames.length ? this.frames[this.index] : idleFrame(this.list));
-  atEnd = $derived(this.index >= this.frames.length - 1);
-  hasRun = $derived(this.frames.length > 0);
 
-  #timer: ReturnType<typeof setTimeout> | null = null;
+  get frameCount(): number {
+    return this.frames.length;
+  }
+
+  get caption(): string {
+    return this.frame.caption;
+  }
+
+  get tone(): Tone {
+    return this.frame.tone;
+  }
+
+  /**
+   * Cada fotograma se reduce a una columna de marcas, una por nodo, con la que el
+   * paso está tocando en amarillo: la tira dibuja la forma de la operación antes de
+   * reproducirla.
+   */
+  get stripCells(): StripCell[] {
+    return this.frames.map((frame) => {
+      const active = new Set(frame.activeNodes);
+      const ghosts = new Set(frame.ghosts);
+      return {
+        tone: frame.tone,
+        marks: frame.nodes.map((node) => (active.has(node.id) ? 'on' : ghosts.has(node.id) ? 'gone' : 'off')),
+      };
+    });
+  }
 
   selectStructure(structure: StructureDef) {
     if (structure.id === this.structure.id) return;
@@ -51,82 +72,25 @@ export class Player {
   execute() {
     const operation = this.operation;
     if (!operation) return;
-    this.pause();
+    this.rewind();
 
     const working = cloneState($state.snapshot(this.list) as ListState);
     const { frames, state } = runOperation(operation.run(working, { ...this.args }));
 
     this.list = state;
     this.frames = frames;
-    this.index = 0;
     if (frames.length > 1) this.play();
   }
 
   reset() {
-    this.pause();
+    this.rewind();
     this.list = createState(this.structure.seed, this.structure.circular, this.structure.doubly);
     this.frames = [];
-    this.index = 0;
   }
 
   clear() {
-    this.pause();
+    this.rewind();
     this.list = createState([], this.structure.circular, this.structure.doubly);
     this.frames = [];
-    this.index = 0;
-  }
-
-  play() {
-    if (!this.frames.length) return;
-    if (this.atEnd) this.index = 0;
-    this.playing = true;
-    this.#schedule();
-  }
-
-  pause() {
-    this.playing = false;
-    if (this.#timer !== null) {
-      clearTimeout(this.#timer);
-      this.#timer = null;
-    }
-  }
-
-  toggle() {
-    if (this.playing) this.pause();
-    else this.play();
-  }
-
-  stepForward() {
-    this.pause();
-    if (this.index < this.frames.length - 1) this.index += 1;
-  }
-
-  stepBack() {
-    this.pause();
-    if (this.index > 0) this.index -= 1;
-  }
-
-  seek(index: number) {
-    this.pause();
-    this.index = Math.min(Math.max(index, 0), Math.max(this.frames.length - 1, 0));
-  }
-
-  setSpeed(speed: number) {
-    this.speed = speed;
-    if (this.playing) this.#schedule();
-  }
-
-  #schedule() {
-    if (this.#timer !== null) clearTimeout(this.#timer);
-    this.#timer = setTimeout(() => {
-      this.#timer = null;
-      if (!this.playing) return;
-      if (this.index >= this.frames.length - 1) {
-        this.playing = false;
-        return;
-      }
-      this.index += 1;
-      this.#schedule();
-    }, BASE_INTERVAL / this.speed);
   }
 }

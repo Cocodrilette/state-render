@@ -2,14 +2,55 @@
   import CodePanel from './lib/components/CodePanel.svelte';
   import Console from './lib/components/Console.svelte';
   import Deck from './lib/components/Deck.svelte';
+  import MetroConsole from './lib/components/MetroConsole.svelte';
+  import MetroViewport from './lib/components/MetroViewport.svelte';
   import StructureList from './lib/components/StructureList.svelte';
   import Viewport from './lib/components/Viewport.svelte';
+  import { scenarios } from './lib/core/registry';
+  import type { ScenarioDef, StructureDef } from './lib/core/types';
+  import { MetroPlayer } from './lib/metro-player.svelte';
   import { Player } from './lib/player.svelte';
 
+  /**
+   * La aplicación monta una de dos cosas: un canal de estructura o un escenario.
+   * Cada uno trae su reproductor, su visor y su consola; lo que comparten es el
+   * chasis — rótulo, panel de pseudocódigo y controles de reproducción — porque
+   * recorrer fotogramas se hace igual en los dos casos.
+   */
   const player = new Player();
   player.selectOperation(player.structure.operations[0]);
 
-  let count = $derived(player.frame.nodes.length);
+  const metro = new MetroPlayer();
+
+  let mode = $state<'structure' | 'scenario'>('structure');
+  let scenario = $state<ScenarioDef>(scenarios[0]);
+
+  let active = $derived(mode === 'structure' ? player : metro);
+  let channel = $derived(mode === 'structure' ? player.structure.channel : scenario.channel);
+  let label = $derived(mode === 'structure' ? player.structure.label : scenario.label);
+  let color = $derived(mode === 'structure' ? player.structure.color : scenario.color);
+  let program = $derived(mode === 'structure' ? player.operation : scenario.program);
+
+  let readout = $derived.by(() => {
+    if (mode === 'structure') {
+      const count = player.frame.nodes.length;
+      return `${count} ${count === 1 ? 'nodo' : 'nodos'}`;
+    }
+    const { cabezas, vagones } = metro.params;
+    return `${cabezas} cabezas · ${vagones} vagones`;
+  });
+
+  function showStructure(next: StructureDef) {
+    metro.pause();
+    mode = 'structure';
+    player.selectStructure(next);
+  }
+
+  function showScenario(next: ScenarioDef) {
+    player.pause();
+    mode = 'scenario';
+    scenario = next;
+  }
 
   function onKeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement | null;
@@ -17,20 +58,20 @@
 
     if (event.key === ' ') {
       event.preventDefault();
-      player.toggle();
+      active.toggle();
     } else if (event.key === 'ArrowRight') {
       event.preventDefault();
-      player.stepForward();
+      active.stepForward();
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      player.stepBack();
+      active.stepBack();
     }
   }
 </script>
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="app" style:--ch={player.structure.color}>
+<div class="app" style:--ch={color}>
   <header class="slate">
     <div class="brand">
       <svg class="glyph" viewBox="0 0 24 20" aria-hidden="true">
@@ -41,16 +82,20 @@
     </div>
 
     <div class="readout">
-      <span class="badge osd">{player.structure.channel}</span>
-      <h1 class="osd">{player.structure.label}</h1>
-      <span class="count mono">{count} {count === 1 ? 'nodo' : 'nodos'}</span>
+      <span class="badge osd">{channel}</span>
+      <h1 class="osd">{label}</h1>
+      <span class="count mono">{readout}</span>
     </div>
 
     <p class="hints mono">espacio reproduce · ←/→ fotograma</p>
   </header>
 
   <aside class="structures-pane">
-    <StructureList active={player.structure} onSelect={(structure) => player.selectStructure(structure)} />
+    <StructureList
+      activeId={mode === 'structure' ? player.structure.id : scenario.id}
+      onSelect={showStructure}
+      onSelectScenario={showScenario}
+    />
   </aside>
 
   <!--
@@ -60,19 +105,27 @@
   -->
   <main class="stage-pane">
     <div class="viewport-slot">
-      <Viewport frame={player.frame} />
+      {#if mode === 'structure'}
+        <Viewport frame={player.frame} />
+      {:else}
+        <MetroViewport frame={metro.frame} />
+      {/if}
     </div>
     <div class="code-slot">
-      <CodePanel operation={player.operation} activeLine={player.frame.codeLine} running={player.hasRun} />
+      <CodePanel {program} activeLine={active.frame.codeLine} running={active.hasRun} />
     </div>
   </main>
 
   <aside class="console-pane">
-    <Console {player} />
+    {#if mode === 'structure'}
+      <Console {player} />
+    {:else}
+      <MetroConsole player={metro} />
+    {/if}
   </aside>
 
   <footer class="deck-pane">
-    <Deck {player} />
+    <Deck player={active} />
   </footer>
 </div>
 

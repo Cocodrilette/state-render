@@ -1,7 +1,8 @@
 import { circularOperations } from './circular';
 import { doublyOperations } from './doubly';
+import { METRO_CODE, METRO_NOTE } from './metro';
 import { singlyOperations } from './singly';
-import type { StructureDef } from './types';
+import type { ScenarioDef, StructureDef } from './types';
 
 /**
  * Catálogo de canales. Añadir una estructura nueva es añadir un módulo de
@@ -41,6 +42,23 @@ export const structures: StructureDef[] = [
   },
 ];
 
+/**
+ * Escenarios: problemas que ninguna estructura resuelve sola. Se recorren con el
+ * mismo transporte que un canal, pero cada uno trae su visor y su consola.
+ */
+export const scenarios: ScenarioDef[] = [
+  {
+    id: 'metro',
+    channel: 'SIM1',
+    label: 'Garajes del metro',
+    tagline:
+      'Seis listas que se intercambian nodos durante cinco días. Un tren ES una lista doble de vagones.',
+    color: 'var(--ch-s)',
+    parts: ['6 listas', '2 simples · FIFO', '4 dobles'],
+    program: { complexity: 'O(n) por jornada', note: METRO_NOTE, code: METRO_CODE },
+  },
+];
+
 /** Canales en cola: se muestran apagados debajo de los disponibles. */
 export const upcoming = [
   { channel: 'CH4', label: 'Pila y cola' },
@@ -49,4 +67,8 @@ export const upcoming = [
 
 export function findStructure(id: string): StructureDef {
   return structures.find((structure) => structure.id === id) ?? structures[0];
+}
+
+export function findScenario(id: string): ScenarioDef {
+  return scenarios.find((scenario) => scenario.id === id) ?? scenarios[0];
 }

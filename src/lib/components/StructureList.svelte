@@ -1,13 +1,15 @@
 <script lang="ts">
-  import { structures, upcoming } from '../core/registry';
-  import type { StructureDef } from '../core/types';
+  import { scenarios, structures, upcoming } from '../core/registry';
+  import type { ScenarioDef, StructureDef } from '../core/types';
 
   interface Props {
-    active: StructureDef;
+    /** Id de lo que está montado, sea un canal o un escenario. */
+    activeId: string;
     onSelect: (structure: StructureDef) => void;
+    onSelectScenario: (scenario: ScenarioDef) => void;
   }
 
-  let { active, onSelect }: Props = $props();
+  let { activeId, onSelect, onSelectScenario }: Props = $props();
 </script>
 
 <nav class="structures" aria-label="Estructuras">
@@ -18,15 +20,39 @@
       <li>
         <button
           class="entry"
-          class:current={structure.id === active.id}
+          class:current={structure.id === activeId}
           style:--swatch={structure.color}
-          aria-current={structure.id === active.id ? 'true' : undefined}
+          aria-current={structure.id === activeId ? 'true' : undefined}
           onclick={() => onSelect(structure)}
         >
           <span class="swatch" aria-hidden="true"></span>
           <span class="code osd">{structure.channel}</span>
           <span class="name">{structure.label}</span>
           <span class="tagline">{structure.tagline}</span>
+        </button>
+      </li>
+    {/each}
+  </ul>
+
+  <!--
+    Un escenario no es una estructura más y no se lista con ellas: es un problema que
+    necesita varias trabajando juntas, así que va en su propio bloque.
+  -->
+  <h2 class="osd title queued">Escenarios</h2>
+  <ul>
+    {#each scenarios as scenario (scenario.id)}
+      <li>
+        <button
+          class="entry"
+          class:current={scenario.id === activeId}
+          style:--swatch={scenario.color}
+          aria-current={scenario.id === activeId ? 'true' : undefined}
+          onclick={() => onSelectScenario(scenario)}
+        >
+          <span class="swatch" aria-hidden="true"></span>
+          <span class="code osd">{scenario.channel}</span>
+          <span class="name">{scenario.label}</span>
+          <span class="tagline">{scenario.tagline}</span>
         </button>
       </li>
     {/each}

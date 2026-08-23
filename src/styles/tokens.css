@@ -27,6 +27,8 @@
   --ch-c: #0ea5c0;
   --ch-m: #c6499a;
   --ch-v: #8b7cf5;
+  /* Los escenarios llevan su propio color: no son una estructura más. */
+  --ch-s: #4d84e8;
 
   /* Amarillo de emisión. Significa una sola cosa en toda la plataforma:
      «esto es lo que el fotograma actual está tocando». */
